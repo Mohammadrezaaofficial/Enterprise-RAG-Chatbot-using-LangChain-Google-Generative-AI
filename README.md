@@ -2,7 +2,7 @@
 
 ### Built a Retrieval-Augmented Generation (RAG) Chatbot application that enables users to retrieve accurate answers from enterprise documents (CSV Database) using semantic search and Large Language Models.
 
-# Key Contributions:
+Key Contributions:
 
 Designed an end-to-end RAG pipeline.
 Integrated Google Generative AI with LangChain.
