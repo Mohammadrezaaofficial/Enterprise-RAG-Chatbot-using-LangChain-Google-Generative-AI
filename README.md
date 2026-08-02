@@ -5,8 +5,13 @@
 Key Contributions:
 
 Designed an end-to-end RAG pipeline.
+
 Integrated Google Generative AI with LangChain.
+
 Implemented document chunking and embedding generation.
+
 Built semantic search capabilities using vector embeddings.
+
 Improved response quality by grounding LLM outputs on enterprise knowledge.
+
 Represent the project in Streamlit Community Cloud
