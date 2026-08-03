@@ -17,11 +17,21 @@ instructor_embeddings = GoogleGenerativeAIEmbeddings(
     api_key= API_key
 )
 
+from pathlib import Path
 
 vectordb_file_path = "faiss_index"
 def create_vector_db():
     # Load data from FAQ sheet
-    loader = CSVLoader(file_path='q_a_db.csv', source_column="prompt")
+    #loader = CSVLoader(file_path='q_a_db.csv', source_column="prompt")
+
+    BASE_DIR = Path(__file__).parent
+
+    csv_path = BASE_DIR / "q_a_db.csv"
+
+    loader = CSVLoader(
+        file_path=str(csv_path),
+        source_column="prompt"
+    )
     data = loader.load()
 
     # Create a FAISS instance for vector database from 'data'
