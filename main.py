@@ -8,8 +8,8 @@ st.title("Hello, How can I help you? 🌱")
 if not os.path.exists("faiss_index"):
     with st.spinner("Creating knowledge base... Please wait."):
         create_vector_db()
-        print(os.getcwd())
-        print(os.listdir("."))
+print(os.getcwd())
+print(os.listdir("."))
 
 question = st.text_input("Question:")
 
