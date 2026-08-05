@@ -85,12 +85,16 @@ Answer:
 """
     )
 
+    # llm = ChatGoogleGenerativeAI(
+    # model="gemini-flash-latest",
+    # api_key=API_KEY,
+    # temperature=0.2
+    # )
     llm = ChatGoogleGenerativeAI(
-    model="gemini-flash-latest",
+    model="gemini-2.5-flash-lite",
     api_key=API_KEY,
     temperature=0.2
     )
-
     qa = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
