@@ -1,77 +1,109 @@
-from langchain_community.vectorstores import FAISS
+import os
+from dotenv import load_dotenv
 from google import genai
 from langchain_community.document_loaders import CSVLoader
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_google_genai import (GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI)
 from langchain_core.prompts import PromptTemplate
 from langchain_classic.chains import RetrievalQA
 
-import os
-from dotenv import load_dotenv
-load_dotenv()  
-API_key = os.environ["GOOGLE_API_KEY"]
-client = genai.Client(api_key=API_key)
+load_dotenv()
+API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# # Initialize instructor embeddings using the Hugging Face model
-instructor_embeddings = GoogleGenerativeAIEmbeddings(
+client = genai.Client(api_key=API_KEY)
+# for model in client.models.list():
+#     print(model.name)
+
+vectordb_file_path = "faiss_index"
+
+##################################################
+# Embeddings
+embeddings = GoogleGenerativeAIEmbeddings(
     model="models/gemini-embedding-001",
-    api_key= API_key
+    api_key=API_KEY
 )
 
 
-vectordb_file_path = "faiss_index"
+# Create Vector Database
 def create_vector_db():
-    # Load data from FAQ sheet
-    loader = CSVLoader(file_path='q_a_db.csv', source_column="prompt")
-    data = loader.load()
 
-    # Create a FAISS instance for vector database from 'data'
-    vectordb = FAISS.from_documents(documents=data,
-                                    embedding=instructor_embeddings)
+    loader = CSVLoader(
+        file_path="q_a_db.csv",
+        source_column="prompt"
+    )
 
-    # Save vector database locally
-    vectordb.save_local(vectordb_file_path)
+    documents = loader.load()
+
+    vectordb = FAISS.from_documents(
+        documents,
+        embeddings
+    )
+
+    vectordb.save_local(
+        vectordb_file_path
+    )
 
 
+
+# QA Chain
 def get_qa_chain():
-    # Load the vector database from the local folder
+
     vectordb = FAISS.load_local(
         vectordb_file_path,
-        instructor_embeddings,
+        embeddings,
         allow_dangerous_deserialization=True
     )
 
-
-    # Create a retriever for querying the vector database
-    retriever = vectordb.as_retriever(score_threshold=0.7)
-
-    prompt_template = """Given the following context and a question, generate an answer based on this context only.
-    In the answer try to provide as much text as possible from "response" section in the source document context without making much changes.
-    If the answer is not found in the context, kindly state "I don't have enough informations regarding this matter. In case, I will report it to the Support team to call you for further details." Don't try to make up an answer.
-
-    CONTEXT: {context}
-
-    QUESTION: {question}"""
-
-    PROMPT = PromptTemplate(
-        template=prompt_template, input_variables=["context", "question"]
+    retriever = vectordb.as_retriever(
+        search_type="similarity",
+        search_kwargs={
+            "k": 3
+        }
     )
-    from langchain_google_genai import ChatGoogleGenerativeAI
+
+    prompt = PromptTemplate(
+
+        input_variables=[
+            "context",
+            "question"
+        ],
+
+        template=""" You are a professional customer support assistant. Use ONLY the provided context. Never invent information. If the answer is not available inside the context, reply EXACTLY with:
+"I don't have enough information regarding this matter. I will report it to our support team, who will contact you using the information you provided."
+
+Context:
+{context}
+
+Question:
+{question}
+
+Answer:
+"""
+    )
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-3.5-flash",
-        api_key=API_key,
-        temperature=0.7
+    model="gemini-flash-latest",
+    api_key=API_KEY,
+    temperature=0.2
     )
-    chain = RetrievalQA.from_chain_type(llm=llm,
-                                        chain_type="stuff",
-                                        retriever=retriever,
-                                        input_key="query",
-                                        return_source_documents=True,
-                                        chain_type_kwargs={"prompt": PROMPT})
 
-    return chain
+    qa = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=retriever,
+        input_key="query",
+        return_source_documents=True,
+        chain_type_kwargs={
+            "prompt": prompt
+        }
+    )
+
+    return qa
+
 
 if __name__ == "__main__":
     create_vector_db()
     chain = get_qa_chain()
-    print(chain("How can I access to the support team"))
+    print(chain.invoke({
+        "query":"How can I contact support?"
+    }))
