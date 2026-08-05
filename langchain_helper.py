@@ -102,8 +102,18 @@ Answer:
 
 
 if __name__ == "__main__":
-    create_vector_db()
+
+    if not os.path.exists("faiss_index"):
+        create_vector_db()
+
     chain = get_qa_chain()
-    print(chain.invoke({
-        "query":"How can I contact support?"
-    }))
+
+    try:
+        response = chain.invoke({
+        "query": "How can I contact support?"
+        })
+        print(response)
+
+    except Exception as e:
+        print("Gemini Error:")
+        print(e)
