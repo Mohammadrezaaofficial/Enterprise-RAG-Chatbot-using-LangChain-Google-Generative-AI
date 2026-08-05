@@ -1,14 +1,18 @@
 import os
-from dotenv import load_dotenv
 from google import genai
 from langchain_community.document_loaders import CSVLoader
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import (GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI)
 from langchain_core.prompts import PromptTemplate
 from langchain_classic.chains import RetrievalQA
+import streamlit as st
 
-load_dotenv()
-API_KEY = os.environ.get("GOOGLE_API_KEY")
+if "GOOGLE_API_KEY" in st.secrets:
+    API_KEY = st.secrets["GOOGLE_API_KEY"]
+else:
+    from dotenv import load_dotenv
+    load_dotenv()
+    API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 client = genai.Client(api_key=API_KEY)
 # for model in client.models.list():
